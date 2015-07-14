@@ -1,0 +1,12 @@
+{application, ls_runner,
+ [
+  {description, ""},
+  {vsn, "0.1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { ls_runner_app, []}},
+  {env, []}
+ ]}.

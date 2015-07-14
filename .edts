@@ -1,0 +1,4 @@
+:name "ls_runner_edts"
+:node-sname "ls_runner_edts"
+:lib-dirs '("deps" "test")
+:app-include-dirs '("include")
