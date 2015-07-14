@@ -83,7 +83,7 @@ stop(Socket, IP, PortNo, RunId) ->
     ok = file:make_dir(RunLogDir),
     {ok, _} = file:copy("log/notice.log",
                         filename:join([RunLogDir, "notice.log"])),
-    lager:info([{ls, x}], "[LSR] notice.log copied to %p and ls stopped",
+    lager:info([{ls, x}], "[LSR] notice.log copied to ~p and ls stopped",
                [RunLogDir]),
     ok = gen_udp:send(Socket, IP, PortNo, <<"stopped">>).
 
