@@ -78,7 +78,7 @@ prepare(Socket, IP, PortNo) ->
     ok = gen_udp:send(Socket, IP, PortNo, <<"ready">>).
 
 stop(Socket, IP, PortNo, RunId) ->
-    ok = application:stop(ls),
+    [ok = application:stop(App) || App <- [ls, exometer, exometer_core]],
     RunLogDir = filename:join(["log", binary_to_list(RunId)]),
     ok = file:make_dir(RunLogDir),
     {ok, _} = file:copy("log/notice.log",
