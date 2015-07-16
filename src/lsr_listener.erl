@@ -72,7 +72,8 @@ handle_request(<<"stop/", RunId/binary>>, Socket, IP, PortNo) ->
 
 
 prepare(Socket, IP, PortNo) ->
-    ok = file:delete("log/notice.log"),
+    filelib:is_file("log/notice.log") =:= true
+        andalso (ok = file:delete("log/notice.log")),
     {ok, _} = application:ensure_all_started(ls),
     lager:info([{ls, x}], "[LSR] notice.log deleted and ls started"),
     ok = gen_udp:send(Socket, IP, PortNo, <<"ready">>).
@@ -86,13 +87,5 @@ stop(Socket, IP, PortNo, RunId) ->
     lager:info([{ls, x}], "[LSR] notice.log copied to ~p and ls stopped",
                [RunLogDir]),
     ok = gen_udp:send(Socket, IP, PortNo, <<"stopped">>).
-
-
-
-
-
-
-
-
 
 
