@@ -1,4 +1,5 @@
-.PHONY: compile get-deps update-deps clean deep-clean no-compile-rel rel test rebar parse_logs
+.PHONY: compile get-deps update-deps clean deep-clean no-compile-rel \
+	rel test rebar parse_and_plot
 
 compile: get-deps
 	./rebar compile
@@ -28,5 +29,5 @@ rebar:
 	wget -c https://github.com/rebar/rebar/wiki/rebar
 	chmod +x rebar
 
-parse_logs:
-	python scripts/parse_ls_logs.py
+parse_and_plot:
+	python scripts/parse_ls_logs.py --open-plots

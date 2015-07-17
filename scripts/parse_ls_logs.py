@@ -2,6 +2,8 @@
 import datetime as dt
 import argparse
 import os
+import logging
+import subprocess
 
 
 def seconds_from_start(raw_time):
@@ -24,9 +26,13 @@ def parse(args):
         if d == args.base_dir:
             continue
         parse_app_handle_pkt_in(os.path.join(d, 'notice.log'),
-                                os.path.join(d, 'app_hdl_pkt_in.data'))
+                                os.path.join(d, args.app_hdl_file))
         parse_controller_handle_pkt_in(os.path.join(d, 'notice.log'),
-                                       os.path.join(d, 'ctrl_hdl_pkt_in.data'))
+                                       os.path.join(d, args.ctrl_hdl_file))
+        exec_plot(os.path.join(d, args.app_hdl_file),
+                  os.path.join(d, args.ctrl_hdl_file),
+                  os.path.join(d, args.output_plot),
+                  args.open_plots)
 
 
 def get_child_dir(dir):
@@ -71,8 +77,35 @@ def parse_controller_handle_pkt_in(log_file, out_file):
                 out.write('%d %d \n' % (secs_from_start, value))
     reset_time()
 
+
+def exec_plot(app_hdl_file, ctrl_hdl_file, output_plot, open_plots):
+    cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +
+           ' -e "ctrl_hdl_file=\'{ctrl_hdl_file}\'"' +
+           ' -e "app_hdl_file=\'{app_hdl_file}\'"' +
+           ' scripts/plot_ls_stats.plg')
+    formatted = cmd.format(app_hdl_file=app_hdl_file,
+                           ctrl_hdl_file=ctrl_hdl_file,
+                           output_plot=output_plot)
+    logging.info('Running plot command %s' % formatted)
+    result = subprocess.check_output([formatted],
+                                     stderr=subprocess.STDOUT,
+                                     shell=True)
+    if result:
+        logging.info("Plot cmd result %s" % result)
+    if open_plots:
+        subprocess.call(['ristretto %s &' % output_plot], shell=True)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parse Loom Switch Logs')
     parser.add_argument('--base-dir', default='_rel/ls_runner/log')
     parser.add_argument('--output-dir', default='.')
+    parser.add_argument('--app-hdl-file', default='app_hdl_pkt_in.data')
+    parser.add_argument('--ctrl-hdl-file', default='ctrl_hdl_pkt_in.data')
+    parser.add_argument('--output-plot', default='plot.png')
+    parser.add_argument('--open-plots', action='store_true')
+    logging.basicConfig(level=logging.INFO)
     parse(parser.parse_args())
+
+
+# gnuplot -e "output_plot='_rel/ls_runner/log/2015-07-14T17:12:25.774757/plot.png'" -e "ctrl_hdl_file='_rel/ls_runner/log/2015-07-14T17:12:25.774757/ctrl_hdl_pkt_in.data'" -e "app_hdl_file='_rel/ls_runner/log/2015-07-14T17:12:25.774757/app_hdl_pkt_in.data'" scripts/plot_ls_stats.plg     
