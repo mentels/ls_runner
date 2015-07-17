@@ -80,12 +80,15 @@ prepare(Socket, IP, PortNo) ->
 
 stop(Socket, IP, PortNo, RunId) ->
     [ok = application:stop(App) || App <- [ls, exometer, exometer_core]],
-    RunLogDir = filename:join(["log", binary_to_list(RunId)]),
-    ok = file:make_dir(RunLogDir),
+    RunLogDir0 = io_lib:format("~s-m:~s",
+                               [binary_to_list(RunId),
+                                application:get_env(ls, mode, regular)]),
+    RunLogDir1 = filename:join(["log", RunLogDir0]),
+    ok = file:make_dir(RunLogDir1),
     {ok, _} = file:copy("log/notice.log",
-                        filename:join([RunLogDir, "notice.log"])),
+                        filename:join([RunLogDir1, "notice.log"])),
     lager:info([{ls, x}], "[LSR] notice.log copied to ~p and ls stopped",
-               [RunLogDir]),
+               [RunLogDir1]),
     ok = gen_udp:send(Socket, IP, PortNo, <<"stopped">>).
 
 
