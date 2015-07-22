@@ -65,30 +65,42 @@ code_change(_OldVsn, State, _Extra) ->
 
 handle_request(<<"prepare/", RunId/binary>>, Socket, IP,PortNo) ->
     lager:info([{ls, x}], "[LSR] Got request to prepare for run ~p", [RunId]),
-    prepare(Socket, IP, PortNo);
+    {Mode, SchedulersOnline} = parse_opts_from_prepare(RunId),
+    setup_loom_switch(Mode, SchedulersOnline),
+    answer_ready(Socket, IP, PortNo);
 handle_request(<<"stop/", RunId/binary>>, Socket, IP, PortNo) ->
     lager:info([{ls, x}], "[LSR] Got request to stop run  ~p", [RunId]),
     stop(Socket, IP, PortNo, RunId).
 
 
-prepare(Socket, IP, PortNo) ->
+parse_opts_from_prepare(Request) ->
+    {match, [[Mode, SchedulersOnline]]} =
+        re:run(Request,
+               ".*m:(?<MODE>regular|proc_per_switch).*(sch:(?<SCH>\\d+)).*",
+           [global, {capture, ['MODE', 'SCH'], list}]),
+    {list_to_atom(Mode), list_to_integer(SchedulersOnline)}.
+
+setup_loom_switch(Mode, SchedulersOnline) ->
     filelib:is_file("log/notice.log") =:= true
         andalso (ok = file:delete("log/notice.log")),
+    ok = application:set_env(ls, mode, Mode),
+    ok = application:set_env(ls, schedulers, SchedulersOnline),
     {ok, _} = application:ensure_all_started(ls),
-    lager:info([{ls, x}], "[LSR] notice.log deleted and ls started"),
+    lager:info([{ls, x}],
+               "[LSR] notice.log deleted and ls started with config ~p",
+               [application:get_all_env(ls)]).
+
+answer_ready(Socket, IP, PortNo) ->
     ok = gen_udp:send(Socket, IP, PortNo, <<"ready">>).
 
 stop(Socket, IP, PortNo, RunId) ->
     [ok = application:stop(App) || App <- [ls, exometer, exometer_core]],
-    RunLogDir0 = io_lib:format("~s-m:~s",
-                               [binary_to_list(RunId),
-                                application:get_env(ls, mode, regular)]),
-    RunLogDir1 = filename:join(["log", RunLogDir0]),
-    ok = file:make_dir(RunLogDir1),
+    RunLogDir = filename:join(["log", RunId]),
+    ok = file:make_dir(RunLogDir),
     {ok, _} = file:copy("log/notice.log",
-                        filename:join([RunLogDir1, "notice.log"])),
+                        filename:join([RunLogDir, "notice.log"])),
     lager:info([{ls, x}], "[LSR] notice.log copied to ~p and ls stopped",
-               [RunLogDir1]),
+               [RunLogDir]),
     ok = gen_udp:send(Socket, IP, PortNo, <<"stopped">>).
 
 

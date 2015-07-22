@@ -1,5 +1,5 @@
 .PHONY: compile get-deps update-deps clean deep-clean no-compile-rel \
-	rel test rebar parse_and_plot
+	rel run test rebar parse_and_plot
 
 compile: get-deps
 	./rebar compile
@@ -20,6 +20,9 @@ no-compile-rel:
 	./relx -c _rel/relx.config
 
 rel: compile no-compile-rel
+
+run:
+	./_rel/ls_runner/bin/ls_runner
 
 test:
 	mkdir -p /tmp/ct_log
