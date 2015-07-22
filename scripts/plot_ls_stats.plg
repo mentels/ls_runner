@@ -4,5 +4,6 @@ set xlabel "test duration [s]"
 set output output_plot
 set ylabel "handle packet in time [micros]"
 set key on
+set title plot_title
 plot app_hdl_file u 1:2 lc rgb"green" with linespoints, \
      ctrl_hdl_file u 1:2 lc rgb"blue" with linespoints
