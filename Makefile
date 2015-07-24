@@ -1,5 +1,5 @@
 .PHONY: compile get-deps update-deps clean deep-clean no-compile-rel \
-	rel run test rebar parse_and_plot
+	rel run test parse_and_plot
 
 compile: get-deps
 	./rebar compile

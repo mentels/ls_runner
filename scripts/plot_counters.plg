@@ -1,0 +1,9 @@
+set term png truecolor size 1024,768
+set xlabel "test duration [s]"
+
+set output output_plot
+set key on
+set title plot_title
+plot packet_inf u 1:2 lc rgb"green" with linespoints, \
+     packet_outf u 1:2 lc rgb"blue" with linespoints, \
+     flow_modf u 1:2 lc rgb"red" with linespoints

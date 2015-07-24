@@ -24,42 +24,51 @@ def reset_time():
 
 def parse(args):
     for d in get_child_dirs(args.base_dir, args.log_dir_pattern):
-        if d == args.base_dir:
+        if d == args.base_dir or os.path.basename(d).startswith('_'):
             continue
-        parse_app_handle_pkt_in(os.path.join(d, 'notice.log'),
-                                os.path.join(d, args.app_hdl_file))
-        parse_controller_handle_pkt_in(os.path.join(d, 'notice.log'),
-                                       os.path.join(d, args.ctrl_hdl_file))
-        exec_plot(os.path.join(d, args.app_hdl_file),
-                  os.path.join(d, args.ctrl_hdl_file),
-                  os.path.join(d, args.output_plot),
-                  os.path.basename(d),
-                  args.open_plots)
+        process_histogram_metrics(d, args.open_plots)
+        process_counter_metrics(d, args.open_plots)
+
+
+def process_histogram_metrics(d, open_plots):
+    metrics = ['app_handle_packet_in_mean', 'controller_handle_packet_in_mean',
+               'fwd_table_size_mean']
+    for m in metrics:
+        parse_metric(m, os.path.join(d, 'notice.log'),
+                     os.path.join(d, m + '.data'))
+    exec_packet_in_handle_plot(os.path.join(d, metrics[0] + '.data'),
+                               os.path.join(d, metrics[1] + '.data'),
+                               os.path.basename(d),
+                               open_plots,
+                               os.path.join(d, 'packet_in_handle.png'))
+    exec_fwd_table_size_plot(os.path.join(d, metrics[2] + '.data'),
+                             os.path.basename(d),
+                             open_plots,
+                             os.path.join(d, 'fwd_table_size.png'))
+
+
+def process_counter_metrics(d, open_plots):
+    metrics = ['packet_in_one', 'packet_out_one', 'flow_mod_one']
+    for m in metrics:
+        parse_metric(m, os.path.join(d, 'notice.log'),
+                     os.path.join(d, m + '.data'))
+    exec_counters_plot(os.path.join(d, metrics[0] + '.data'),
+                       os.path.join(d, metrics[1] + '.data'),
+                       os.path.join(d, metrics[2] + '.data'),
+                       os.path.basename(d),
+                       open_plots,
+                       os.path.join(d, 'counters.png'))
 
 
 def get_child_dirs(base_dir, pattern):
     return [d for d in glob.glob(os.path.join(base_dir, pattern + '*'))
             if os.path.isdir(d)]
 
-# def parse_pkt_in():
-#     with open(log_file) as f, open(pkt_in_count_file, 'w') as pkt_in:
-#         prev_count = 0
-#         for line in f:
-#             if 'packet_in_count' in line:
-#                 splitted = line.split()
-#                 time = splitted[1].split('.')[0]
-#                 secs_from_start = seconds_from_start(time)
-#                 count_value = int(splitted[5].split(":")[1])
-#                 calc_one_value = count_value - prev_count
-#                 prev_count = count_value
-#                 pkt_in.write('%d %d %d \n' % (secs_from_start, count_value,
-#                                               calc_one_value))
 
-
-def parse_app_handle_pkt_in(log_file, out_file):
+def parse_metric(metric_string, log_file, out_file):
     with open(log_file) as f, open(out_file, 'w') as out:
         for line in f:
-            if 'app_handle_packet_in_mean' in line:
+            if metric_string in line:
                 splitted = line.split()
                 time = splitted[1].split('.')[0]
                 secs_from_start = seconds_from_start(time)
@@ -68,24 +77,13 @@ def parse_app_handle_pkt_in(log_file, out_file):
     reset_time()
 
 
-def parse_controller_handle_pkt_in(log_file, out_file):
-    with open(log_file) as f, open(out_file, 'w') as out:
-        for line in f:
-            if 'controller_handle_packet_in_mean' in line:
-                splitted = line.split()
-                time = splitted[1].split('.')[0]
-                secs_from_start = seconds_from_start(time)
-                value = int(splitted[5].split(":")[1])
-                out.write('%d %d \n' % (secs_from_start, value))
-    reset_time()
-
-
-def exec_plot(app_hdl_file, ctrl_hdl_file, output_plot, plot_title, open_plots):
+def exec_packet_in_handle_plot(app_hdl_file, ctrl_hdl_file, plot_title,
+                               open_plots, output_plot):
     cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +
            ' -e "ctrl_hdl_file=\'{ctrl_hdl_file}\'"' +
            ' -e "app_hdl_file=\'{app_hdl_file}\'"' +
            ' -e "plot_title=\'{plot_title}\'"' +
-           ' scripts/plot_ls_stats.plg')
+           ' scripts/plot_handle_packet_in.plg')
     formatted = cmd.format(app_hdl_file=app_hdl_file,
                            ctrl_hdl_file=ctrl_hdl_file,
                            output_plot=output_plot,
@@ -100,13 +98,52 @@ def exec_plot(app_hdl_file, ctrl_hdl_file, output_plot, plot_title, open_plots):
         subprocess.call(['ristretto %s &' % output_plot], shell=True)
 
 
+def exec_counters_plot(packet_inf, packet_outf, flow_modf, plot_title,
+                       open_plots, output_plot):
+    cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +
+           ' -e "packet_inf=\'{packet_inf}\'"' +
+           ' -e "packet_outf=\'{packet_outf}\'"' +
+           ' -e "flow_modf=\'{flow_modf}\'"' +
+           ' -e "plot_title=\'{plot_title}\'"' +
+           ' scripts/plot_counters.plg')
+    formatted = cmd.format(packet_inf=packet_inf,
+                           packet_outf=packet_outf,
+                           flow_modf=flow_modf,
+                           output_plot=output_plot,
+                           plot_title=plot_title)
+    logging.info('Running plot command %s' % formatted)
+    result = subprocess.check_output([formatted],
+                                     stderr=subprocess.STDOUT,
+                                     shell=True)
+    if result:
+        logging.info("Plot cmd result %s" % result)
+    if open_plots:
+        subprocess.call(['ristretto %s &' % output_plot], shell=True)
+
+
+def exec_fwd_table_size_plot(fwd_table_sizef, plot_title, open_plots,
+                             output_plot):
+    cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +
+           ' -e "fwd_table_sizef=\'{fwd_table_sizef}\'"' +
+           ' -e "plot_title=\'{plot_title}\'"' +
+           ' scripts/plot_fwd_table_size.plg')
+    formatted = cmd.format(fwd_table_sizef=fwd_table_sizef,
+                           output_plot=output_plot,
+                           plot_title=plot_title)
+    logging.info('Running plot command %s' % formatted)
+    result = subprocess.check_output([formatted],
+                                     stderr=subprocess.STDOUT,
+                                     shell=True)
+    if result:
+        logging.info("Plot cmd result %s" % result)
+    if open_plots:
+        subprocess.call(['ristretto %s &' % output_plot], shell=True)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parse Loom Switch Logs')
     parser.add_argument('--base-dir', default='_rel/ls_runner/log')
     parser.add_argument('--log-dir-pattern', default='')
     parser.add_argument('--output-dir', default='.')
-    parser.add_argument('--app-hdl-file', default='app_hdl_pkt_in.data')
-    parser.add_argument('--ctrl-hdl-file', default='ctrl_hdl_pkt_in.data')
     parser.add_argument('--output-plot', default='plot.png')
     parser.add_argument('--open-plots', action='store_true')
     logging.basicConfig(level=logging.INFO)
