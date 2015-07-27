@@ -70,7 +70,10 @@ handle_request(<<"prepare/", RunId/binary>>, Socket, IP,PortNo) ->
     answer_ready(Socket, IP, PortNo);
 handle_request(<<"stop/", RunId/binary>>, Socket, IP, PortNo) ->
     lager:info([{ls, x}], "[LSR] Got request to stop run  ~p", [RunId]),
-    stop(Socket, IP, PortNo, RunId).
+    stop(Socket, IP, PortNo, RunId);
+handle_request(_Req, _Socket, IP, PortNo) ->
+    lager:error([{ls, x}], "[LSR] Got unknown request from ~p:~p",
+                [IP, PortNo]).
 
 
 parse_opts_from_prepare(Request) ->
