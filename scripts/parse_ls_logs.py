@@ -23,11 +23,13 @@ def reset_time():
 
 
 def parse(args):
+    chd = get_child_dirs(args.base_dir, args.log_dir_pattern)
+    logging.info('Found log dirs: %s' % chd)
     for d in get_child_dirs(args.base_dir, args.log_dir_pattern):
         if d == args.base_dir or os.path.basename(d).startswith('_'):
             continue
         process_histogram_metrics(d, args.open_plots)
-        process_counter_metrics(d, args.open_plots)
+        process_counter_metrics(d, args.open_plots, args.cnt_div)
 
 
 def process_histogram_metrics(d, open_plots):
@@ -35,7 +37,7 @@ def process_histogram_metrics(d, open_plots):
                'fwd_table_size_mean']
     for m in metrics:
         parse_metric(m, os.path.join(d, 'notice.log'),
-                     os.path.join(d, m + '.data'))
+                     os.path.join(d, m + '.data'), 1)
     exec_packet_in_handle_plot(os.path.join(d, metrics[0] + '.data'),
                                os.path.join(d, metrics[1] + '.data'),
                                os.path.basename(d),
@@ -47,11 +49,11 @@ def process_histogram_metrics(d, open_plots):
                              os.path.join(d, 'fwd_table_size.png'))
 
 
-def process_counter_metrics(d, open_plots):
+def process_counter_metrics(d, open_plots, divide_by):
     metrics = ['packet_in_one', 'packet_out_one', 'flow_mod_one']
     for m in metrics:
         parse_metric(m, os.path.join(d, 'notice.log'),
-                     os.path.join(d, m + '.data'))
+                     os.path.join(d, m + '.data'), divide_by)
     exec_counters_plot(os.path.join(d, metrics[0] + '.data'),
                        os.path.join(d, metrics[1] + '.data'),
                        os.path.join(d, metrics[2] + '.data'),
@@ -65,7 +67,7 @@ def get_child_dirs(base_dir, pattern):
             if os.path.isdir(d)]
 
 
-def parse_metric(metric_string, log_file, out_file):
+def parse_metric(metric_string, log_file, out_file, divide_by):
     with open(log_file) as f, open(out_file, 'w') as out:
         for line in f:
             if metric_string in line:
@@ -73,7 +75,7 @@ def parse_metric(metric_string, log_file, out_file):
                 time = splitted[1].split('.')[0]
                 secs_from_start = seconds_from_start(time)
                 value = int(splitted[5].split(":")[1])
-                out.write('%d %d \n' % (secs_from_start, value))
+                out.write('%d %d \n' % (secs_from_start, value/int(divide_by)))
     reset_time()
 
 
@@ -146,5 +148,6 @@ if __name__ == '__main__':
     parser.add_argument('--output-dir', default='.')
     parser.add_argument('--output-plot', default='plot.png')
     parser.add_argument('--open-plots', action='store_true')
+    parser.add_argument('--cnt-div', default=1)
     logging.basicConfig(level=logging.INFO)
     parse(parser.parse_args())
