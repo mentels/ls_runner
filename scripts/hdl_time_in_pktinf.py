@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, glob, logging, subprocess
+import sys, os, glob, logging, subprocess, re
 import numpy as np
 
 START_FROM_ROW = 16 # after 5 minutes
@@ -50,25 +50,37 @@ def aggregate_metrics(child_dir):
       f.write(pline + '\n')
   [f.close() for f in files]
 
+def get_switches_and_hosts_from_dir(child_dir):
+   p = re.compile(r'.*-c:(?P<hosts>\d+).*-sw:(?P<switches>\d+).*')
+   m = p.search(child_dir)
+   return (int(m.group('hosts')), int(m.group('switches')))
+
 def compute(child_dir, base_dir, acc):
+  switches,hosts = get_switches_and_hosts_from_dir(child_dir)
   data = np.loadtxt(path(child_dir, COMBOUT))
   avgs = np.mean(data, axis=0)
   stds = np.std(data, axis=0)
-  acc.append(zip(avgs, stds))
+  zipped = zip(avgs, stds)
+  zipped.append(("label", "(%d,%d)" % (switches, hosts)))
+  acc.append(zipped)
   return acc
 
 def store_data(base_dir, avgs_with_stds_list):
   with open(path(base_dir, data_filename(base_dir)), 'a') as out:
     for avgs_with_stds in avgs_with_stds_list:
-      for i,(value,std) in enumerate(avgs_with_stds):
-        out.write("%.3f,%.3f" % (value/1000, std/1000))
-        if i<2:
-          out.write(",")
-      out.write("\n")
+      store_row_in_file(out, avgs_with_stds)
+
+def store_row_in_file(out, avgs_with_stds):
+  for (value,std) in avgs_with_stds:
+    if value=="label":
+      test_switches_and_hosts_label = std
+      out.write("\"%s\"\n" % test_switches_and_hosts_label)
+    else:
+      out.write("%.3f,%.3f," % (value/1000, std/1000))  
 
 def prepare_out(base_dir):
   with open(path(base_dir, data_filename(base_dir)), 'w') as out:
-    out.write("pktin,pktin_std,app,app_std,ctrl,ctrl_std\n")
+    out.write("pktin,pktin_std,app,app_std,ctrl,ctrl_std,label\n")
 
 def plot(base_dir):
   cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +

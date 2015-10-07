@@ -1,6 +1,7 @@
 set term png truecolor size 1024,768
 set xlabel "Number of Packet-In Messages in Thousands"
-set ylabel "Packet-In Message Handle Time in Miliseconds" 
+set ylabel "Packet-In Message Handle Time in Miliseconds"
+set datafile separator ","
 
 set output output_plot
 set key on top left
@@ -8,10 +9,12 @@ set key on top left
 pktin_col = 1
 app_col = 3
 ctrl_col = 5
+label_col = 7
 
 ctrl_title = "LOOM SDN/OpenFlow Framework"
 app_title = "LOOM Switch Application"
 
 # set title plot_title
 plot data_file u pktin_col:app_col:(column(pktin_col + 1)):(column(app_col + 1)) lc rgb"green" with xyerrorbars title app_title, \
+     data_file u pktin_col:ctrl_col:label_col with labels point pt 1 offset char -3,1 notitle, \
      data_file u pktin_col:ctrl_col:(column(pktin_col + 1)):(column(ctrl_col + 1)) lc rgb"blue" with xyerrorbars title ctrl_title
