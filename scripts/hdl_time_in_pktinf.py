@@ -56,12 +56,12 @@ def get_switches_and_hosts_from_dir(child_dir):
    return (int(m.group('hosts')), int(m.group('switches')))
 
 def compute(child_dir, base_dir, acc):
-  switches,hosts = get_switches_and_hosts_from_dir(child_dir)
+  hosts,switches = get_switches_and_hosts_from_dir(child_dir)
   data = np.loadtxt(path(child_dir, COMBOUT))
   avgs = np.mean(data, axis=0)
   stds = np.std(data, axis=0)
   zipped = zip(avgs, stds)
-  zipped.append(("label", "(%d,%d)" % (switches, hosts)))
+  zipped.append((switches, hosts))
   acc.append(zipped)
   return acc
 
@@ -71,16 +71,16 @@ def store_data(base_dir, avgs_with_stds_list):
       store_row_in_file(out, avgs_with_stds)
 
 def store_row_in_file(out, avgs_with_stds):
-  for (value,std) in avgs_with_stds:
-    if value=="label":
-      test_switches_and_hosts_label = std
-      out.write("\"%s\"\n" % test_switches_and_hosts_label)
+  for i,(value,std) in enumerate(avgs_with_stds):
+    if i==3:
+      switches_and_hosts = (value,std)
+      out.write("%d,%d\n" % switches_and_hosts)
     else:
       out.write("%.3f,%.3f," % (value/1000, std/1000))  
 
 def prepare_out(base_dir):
   with open(path(base_dir, data_filename(base_dir)), 'w') as out:
-    out.write("pktin,pktin_std,app,app_std,ctrl,ctrl_std,label\n")
+    out.write("pktin,pktin_std,app,app_std,ctrl,ctrl_std,switches,hosts\n")
 
 def plot(base_dir):
   cmd = ('gnuplot -e "output_plot=\'{output_plot}\'"' +
