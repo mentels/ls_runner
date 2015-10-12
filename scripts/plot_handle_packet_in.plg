@@ -1,9 +1,12 @@
 set term png truecolor size 1024,768
-set xlabel "test duration [s]"
+set xlabel "Test Duration in Seconds"
+set ylabel "Packet-In Message Handle Time in Microseconds"
+
+ctrl_title = "LOOM SDN/OpenFlow Framework"
+app_title = "LOOM Switch Application"
 
 set output output_plot
-set ylabel "handle packet in time [micros]"
 set key on
 set title plot_title
-plot app_hdl_file u 1:2 lc rgb"green" with linespoints, \
-     ctrl_hdl_file u 1:2 lc rgb"blue" with linespoints
+plot app_hdl_file u 1:2 lc rgb"green" with linespoints title app_title, \
+     ctrl_hdl_file u 1:2 lc rgb"blue" with linespoints title ctrl_title

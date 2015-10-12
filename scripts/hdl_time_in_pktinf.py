@@ -3,14 +3,13 @@
 import sys, os, glob, logging, subprocess, re
 import numpy as np
 
-START_FROM_ROW = 16 # after 5 minutes
+START_FROM_ROW = 16 # after 15 minutes
 INCLUDE_ROWS = 20 # for 20 minutes
 
 APP = 'app_handle_packet_in_mean.data'
 CTRL = 'controller_handle_packet_in_mean.data'
 PKTIN = 'packet_in_one.data'
 COMBOUT = 'hdl_time_of_pktin.data'
-OUT = 'out.data'
 
 def path(dir, f):
   return os.path.join(dir, f)

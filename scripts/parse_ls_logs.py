@@ -5,6 +5,7 @@ import os
 import logging
 import subprocess
 import glob
+import re
 
 
 def seconds_from_start(raw_time):
@@ -26,10 +27,17 @@ def parse(args):
     chd = get_child_dirs(args.base_dir, args.log_dir_pattern)
     logging.info('Found log dirs: %s' % chd)
     for d in get_child_dirs(args.base_dir, args.log_dir_pattern):
-        if d == args.base_dir or os.path.basename(d).startswith('_'):
-            continue
         process_histogram_metrics(d, args.open_plots)
         process_counter_metrics(d, args.open_plots, args.cnt_div)
+
+def master_plot_filename(child_dir):
+  p = re.compile(r'.*-c:(?P<hosts>\d+).*-sw:(?P<switches>\d+).*-m:(?P<mode>(proc_per_switch|regular)).*-sch:(?P<schedulers>\d+)')
+  m = p.search(child_dir)
+  mode = m.group('mode')
+  if m.group('mode') == 'proc_per_switch':
+    mode = 'ppsw'
+  return '_240h_%s_%ssch_%ssw_%shpsw.png' % (mode, m.group('schedulers'),
+                                             m.group('switches'), m.group('hosts'))
 
 
 def process_histogram_metrics(d, open_plots):
@@ -43,6 +51,11 @@ def process_histogram_metrics(d, open_plots):
                                os.path.basename(d),
                                open_plots,
                                os.path.join(d, 'packet_in_handle.png'))
+    exec_packet_in_handle_plot(os.path.join(d, metrics[0] + '.data'),
+                               os.path.join(d, metrics[1] + '.data'),
+                               " ",
+                               open_plots,
+                               os.path.join(d, '..', master_plot_filename(d)))
     exec_fwd_table_size_plot(os.path.join(d, metrics[2] + '.data'),
                              os.path.basename(d),
                              open_plots,
