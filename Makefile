@@ -24,6 +24,11 @@ rel: compile no-compile-rel
 run:
 	./_rel/ls_runner/bin/ls_runner
 
+dev:
+	erl -pa ebin/ -pa deps/*/ebin/ -config config/sys.config \
+	-args_file config/vm.args \
+	-eval "application:ensure_all_started(ls_runner)"
+
 test:
 	mkdir -p /tmp/ct_log
 	ct_run -pa deps/*/ebin -pa ebin/ -dir test/ -logdir /tmp/ct_log -noshell

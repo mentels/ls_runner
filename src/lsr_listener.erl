@@ -86,6 +86,7 @@ parse_opts_from_prepare(Request) ->
 setup_loom_switch(Mode, SchedulersOnline) ->
     filelib:is_file("log/notice.log") =:= true
         andalso (ok = file:delete("log/notice.log")),
+    application:load(ls),
     ok = application:set_env(ls, mode, Mode),
     ok = application:set_env(ls, schedulers, SchedulersOnline),
     {ok, _} = application:ensure_all_started(ls),
