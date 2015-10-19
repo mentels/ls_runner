@@ -1,0 +1,27 @@
+set term png truecolor size 1024,768
+set xlabel "Test Scenario [(SWITCHES, HOSTS/SWITCH)]"
+set ylabel "Packet-In Message Handle Time in Miliseconds"
+set datafile separator ","
+
+set output output_plot
+set key on top left
+
+pktin_col = 1
+app_col = 3
+ctrl_col = 5
+switches_col = 7
+hosts_col = 8
+
+Title(Sch) = sprintf("Controller setup with %d schedulers", Sch)
+TS(Sw, H) = sprintf("(%d, %d)", Sw, H)
+
+set xrange [2:22]
+set xtics (TS(5,48) 5, TS(10,24) 10, TS(15,16) 15, TS(20, 12) 20)
+
+# set title plot_title
+plot sch2_file u switches_col:ctrl_col:(column(ctrl_col + 1)) lc rgb"green" with yerrorbars title Title(2), \
+     sch2_file u switches_col:ctrl_col:(column(ctrl_col)) with labels offset char -3,1 notitle, \
+     sch4_file u switches_col:ctrl_col:(column(ctrl_col + 1)) lc rgb"red" with yerrorbars title Title(4), \
+     sch4_file u switches_col:ctrl_col:(column(ctrl_col)) with labels offset char -3,1 notitle, \
+     sch8_file u switches_col:ctrl_col:(column(ctrl_col + 1)) lc rgb"blue" with yerrorbars title Title(8), \
+     sch8_file u switches_col:ctrl_col:(column(ctrl_col)) with labels offset char -3,-1 notitle

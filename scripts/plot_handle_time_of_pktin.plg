@@ -19,5 +19,5 @@ app_title = "LOOM Switch Application"
 
 # set title plot_title
 plot data_file u pktin_col:app_col:(column(pktin_col + 1)):(column(app_col + 1)) lc rgb"green" with xyerrorbars title app_title, \
-     data_file u pktin_col:ctrl_col:(Label(column(switches_col), column(hosts_col))) with labels point pt 1 offset char -3,1 notitle, \
+     data_file u pktin_col:ctrl_col:(Label(column(switches_col), column(hosts_col))) with labels offset char -3,1 notitle, \
      data_file u pktin_col:ctrl_col:(column(pktin_col + 1)):(column(ctrl_col + 1)) lc rgb"blue" with xyerrorbars title ctrl_title
