@@ -1,4 +1,4 @@
-.PHONY: compile get-deps update-deps clean deep-clean no-compile-rel \
+	.PHONY: compile get-deps update-deps clean deep-clean no-compile-rel \
 	rel run test parse_and_plot
 
 compile: get-deps
@@ -43,7 +43,7 @@ parse_and_plot:
 plot_mgr:
 	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_regular_4sch
 	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_regular_8sch
-	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_ppsw_4sch
+	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_ppsw_2sch
 	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_ppsw_4sch
 	./scripts/hdl_time_in_pktinf.py ~/Dropbox/MGR/testy/esl_env/_240h_ppsw_8sch
 	./scripts/hdl_time_in_ts.py ~/Dropbox/MGR/testy/esl_env/
